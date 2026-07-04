@@ -78,6 +78,14 @@ const LOGO_DOMAINS = {
   "Leonisa": "leonisa.com",
   "Ann Chery": "annchery.com",
   "Miraclesuit": "miraclesuit.com",
+  "Sallve": "sallve.com.br",
+  "Cadiveu Professional": "cadiveu.com.br",
+  "Inoar": "inoar.com",
+  "Impala": "impala.com.br",
+  "Bio Extratus": "bioextratus.com.br",
+  "Forever Liss": "foreverliss.com.br",
+  "Vichy Brasil": "vichy.com.br",
+  "Phebo": "phebo.com.br",
 };
 
 function BrandLogo({ marca, size = 18, color, bg }) {
@@ -209,7 +217,66 @@ const VAGAS_FITNESS = [
   ...FITNESS_BRANDS_BLACK.map(([marca, pagamento], i) => gerarVagaFitness(200 + i, marca, pagamento, { black: true, prazo: "10 dias", urgente: i % 2 === 0 })),
 ];
 
-const VAGAS = [VAGA_LEMON_FRESH, ...VAGAS_FITNESS];
+// ---------------------------------------------------------------------------
+// VAGAS DO SETOR BELEZA / COSMÉTICOS
+// Cada marca já vem com um produto específico definido (não sorteado),
+// já que a lista foi montada e aprovada manualmente marca a marca.
+// ---------------------------------------------------------------------------
+const TITULOS_BELEZA = ["Review de", "Unboxing de", "Tutorial usando", "Resenha de"];
+const FORMATOS_BELEZA = ["Vídeo TikTok", "Vídeo Reels", "Foto + Legenda", "Unboxing", "Review em vídeo"];
+
+function gerarVagaBeleza(id, marca, produto, pagamento, opts = {}) {
+  const prazo = opts.prazo || "5 dias";
+  const black = !!opts.black;
+  const titulo = TITULOS_BELEZA[id % TITULOS_BELEZA.length];
+
+  return {
+    id,
+    marca,
+    titulo: `${titulo} ${produto} ${marca}`,
+    catId: "beleza",
+    formato: opts.formato || FORMATOS_BELEZA[id % FORMATOS_BELEZA.length],
+    pagamentoLabel: `R$${pagamento}`,
+    prazo,
+    local: "Remoto",
+    candidatos: opts.candidatos ?? (5 + (id * 5) % 35),
+    urgente: !!opts.urgente,
+    black,
+    descricao: black
+      ? `Buscamos criadora para uma campanha premium com a ${marca}, com múltiplas entregas mostrando ${produto} no dia a dia, resultado real de uso e depoimento sobre a experiência com o produto.`
+      : `Buscamos criador(a) para gravar conteúdo usando ${produto} da ${marca}, mostrando a aplicação/uso real e sua opinião sincera sobre o produto.`,
+    requisitos: black
+      ? [`Gravar pelo menos 3 vídeos usando ${produto} da ${marca}`, "Mostrar o produto sendo aplicado/usado de forma real, sem exageros", "Incluir depoimento falado sobre a experiência e resultado", `Entrega de todos os vídeos em até ${prazo}`]
+      : [`Gravar conteúdo mostrando ${produto} da ${marca} em uso`, "Mostrar a aplicação/uso real do produto", "Dar uma opinião sincera sobre textura, cheiro e resultado", `Entrega em até ${prazo}`],
+  };
+}
+
+const BELEZA_BRANDS = [
+  ["Sallve", "sérum facial", 780], ["Skelt Cosmetics", "creme para manchas na pele", 650],
+  ["Beyoung", "kit skincare personalizado", 720], ["Suada", "blend de óleos pós-treino", 580],
+  ["Verse", "creme facial 40+", 690], ["Juvia", "sérum com peptídeos", 850],
+  ["Widi Care", "protetor solar facial", 620], ["Bioage", "ácido hialurônico", 700],
+  ["Bio Extratus", "máscara capilar", 480], ["Forever Liss", "progressiva sem formol", 650],
+  ["Cadiveu Professional", "kit reconstrução capilar", 900], ["Inoar", "queratina capilar", 750],
+  ["Vizzela", "óleo capilar", 460], ["Yenzah", "creme de pentear", 440],
+  ["Griffus", "shampoo antirresíduo", 470], ["Nazca Cosméticos", "tratamento capilar", 500],
+  ["Impala", "kit de esmaltes", 420], ["Bel Cosméticos", "base fortalecedora de unhas", 430],
+  ["Vitawin", "vitamina capilar em cápsulas", 550], ["Instituto Beleza Natural", "kit tratamento crespo/cacheado", 680],
+  ["Ada Tina", "paleta de maquiagem profissional", 720], ["Catharine Hill", "kit de pincéis profissionais", 600],
+  ["Phebo", "kit de sabonetes perfumados", 450], ["Dermage", "sérum antioxidante", 800],
+  ["Farmax", "linha dermocosmética facial", 580], ["Amend", "shampoo e condicionador", 460],
+  ["Napura", "máscara de hidratação capilar", 500], ["New Nail", "kit de cuidados para unhas", 440],
+  ["Bozzano", "kit grooming masculino", 470], ["L'Acqua di Fiori", "perfume de nicho", 950],
+  ["Talento", "perfume acessível", 500], ["Simple Organic", "sabonete natural", 450],
+  ["Vichy Brasil", "protetor solar dermatológico", 730], ["Yes! Cosmetics", "kit ativação de cachos", 620],
+  ["Meu Rebu", "creme para cachos definidos", 540],
+];
+
+const VAGAS_BELEZA = BELEZA_BRANDS.map(([marca, produto, pagamento], i) =>
+  gerarVagaBeleza(300 + i, marca, produto, pagamento, { urgente: i % 8 === 0 })
+);
+
+const VAGAS = [VAGA_LEMON_FRESH, ...VAGAS_FITNESS, ...VAGAS_BELEZA];
 
 // Referência para o contador de "marcas parceiras" que cresce sozinho a cada 30 minutos
 const PARCEIRAS_BASE = 212;
