@@ -39,9 +39,11 @@ const VAGA_LEMON_FRESH = { id: 1, marca: "Lemon Fresh", titulo: "Indicação loj
 
 // ---------------------------------------------------------------------------
 // LOGOS DAS MARCAS
-// Usa a API pública do Clearbit (logo.clearbit.com/{dominio}) — se o domínio
-// não existir ou a imagem falhar, cai automaticamente no círculo com a inicial
-// da marca (fallback visual, nunca quebra o layout).
+// OBS: a API do Clearbit (logo.clearbit.com) foi DESLIGADA permanentemente em
+// dez/2025 pela HubSpot, por isso usamos o serviço de favicons do Google
+// (google.com/s2/favicons), que é gratuito, não exige chave de API e é
+// bem mais estável. Se a imagem falhar mesmo assim, cai automaticamente no
+// círculo com a inicial da marca (fallback visual, nunca quebra o layout).
 // ---------------------------------------------------------------------------
 const LOGO_DOMAINS = {
   "Lupo": "lupo.com.br",
@@ -92,7 +94,7 @@ function BrandLogo({ marca, size = 18, color, bg }) {
 
   return (
     <img
-      src={`https://logo.clearbit.com/${domain}?size=64`}
+      src={`https://www.google.com/s2/favicons?domain=${domain}&sz=128`}
       alt={marca}
       onError={() => setFailed(true)}
       style={{ width: size, height: size, borderRadius: "50%", objectFit: "cover", flexShrink: 0, background: "#fff", border: "1px solid #EDE9F7" }}
