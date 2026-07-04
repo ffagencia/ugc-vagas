@@ -33,38 +33,156 @@ const CATS = [
   { id: "tech", label: "App / Tech", color: "#3C3489", bg: "#EEEDFE" },
 ];
 
-const FORMATOS = ["Vídeo TikTok", "Vídeo Reels", "Foto + Legenda", "Review em vídeo", "Unboxing"];
-
 const VAGA_LEMON_FRESH = { id: 1, marca: "Lemon Fresh", titulo: "Indicação loja Apple", catId: "eletronicos", formato: "TikTok, Reels e Unboxing", pagamentoLabel: "R$800 ou Apple Watch seminovo", prazo: "7 dias", local: "Remoto", candidatos: 6, urgente: true, black: true,
   descricao: "Buscamos criador para produzir conteúdo de review de um iPhone novo ou Apple Watch, mostrando o produto em uso real e indicando a loja de compra.",
   requisitos: ["Gravar de 6 a 8 vídeos ao todo (TikTok, Reels e Unboxing)", "Focar em review honesto do iPhone ou Apple Watch", "Citar e indicar a loja Lemon Fresh no conteúdo", "Entrega de todos os vídeos em até 7 dias após receber o produto"] };
 
-// Gerador de vagas do setor Fitness (cintas modeladoras) — mantém o padrão de conteúdo
-// (prova de roupa / caimento / conforto) coerente com o tipo de produto, personalizado por marca.
-const TITULOS_SHAPEWEAR = ["Prova de cinta modeladora", "Unboxing de cinta modeladora", "Review de cinta modeladora"];
-const FORMATOS_SHAPEWEAR = ["Vídeo TikTok", "Vídeo Reels", "Unboxing"];
+// ---------------------------------------------------------------------------
+// LOGOS DAS MARCAS
+// Usa a API pública do Clearbit (logo.clearbit.com/{dominio}) — se o domínio
+// não existir ou a imagem falhar, cai automaticamente no círculo com a inicial
+// da marca (fallback visual, nunca quebra o layout).
+// ---------------------------------------------------------------------------
+const LOGO_DOMAINS = {
+  "Lupo": "lupo.com.br",
+  "Loba": "lupo.com.br",
+  "Plié": "plie.com.br",
+  "Esbelt": "esbelt.com.br",
+  "Trifil": "trifil.com.br",
+  "Demillus": "demillus.com.br",
+  "De Millus": "demillus.com.br",
+  "Dilady": "dilady.com.br",
+  "Selene": "selene.com.br",
+  "Duloren": "duloren.com.br",
+  "Mondress": "mondress.com.br",
+  "Le Paris": "leparis.com.br",
+  "New Form": "newform.com.br",
+  "Dupin": "dupin.com.br",
+  "Midas Time": "midastime.com.br",
+  "Shanty Lingerie": "shanty.com.br",
+  "Point Mix": "pointmix.com.br",
+  "Hope": "hopelingerie.com.br",
+  "Scala": "scala.com.br",
+  "Darlequê": "darleque.com.br",
+  "Liz": "liz.com.br",
+  "Recco": "recco.com.br",
+  "Zee Rucci": "zeerucci.com",
+  "Valisere": "valisere.com.br",
+  "Bodyboo": "bodyboo.com.br",
+  "Sculptshe": "sculptshe.com",
+  "Vedette": "vedetteshapewear.com",
+  "Squeem": "squeem.com",
+  "Spanx": "spanx.com",
+  "Leonisa": "leonisa.com",
+  "Ann Chery": "annchery.com",
+  "Miraclesuit": "miraclesuit.com",
+};
 
-function gerarVagaShapewear(id, marca, pagamento, opts = {}) {
+function BrandLogo({ marca, size = 18, color, bg }) {
+  const [failed, setFailed] = useState(false);
+  const domain = LOGO_DOMAINS[marca];
+
+  if (!domain || failed) {
+    return (
+      <div style={{ width: size, height: size, borderRadius: "50%", background: bg, color, fontSize: size * 0.55, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, fontFamily: "'Space Grotesk', sans-serif" }}>
+        {marca.charAt(0).toUpperCase()}
+      </div>
+    );
+  }
+
+  return (
+    <img
+      src={`https://logo.clearbit.com/${domain}?size=64`}
+      alt={marca}
+      onError={() => setFailed(true)}
+      style={{ width: size, height: size, borderRadius: "50%", objectFit: "cover", flexShrink: 0, background: "#fff", border: "1px solid #EDE9F7" }}
+    />
+  );
+}
+
+// ---------------------------------------------------------------------------
+// GERADOR DE VAGAS DO SETOR FITNESS
+// Varia o tipo de produto entregue por cada marca (não só cinta modeladora):
+// roupa fitness, tênis, óculos esportivo, acessório, etc. — mantendo o padrão
+// de review/prova coerente com o tipo de produto.
+// ---------------------------------------------------------------------------
+const TIPOS_PRODUTO_FIT = [
+  {
+    tipo: "cinta modeladora",
+    titulos: ["Prova de cinta modeladora", "Unboxing de cinta modeladora", "Review de cinta modeladora"],
+    formatos: ["Vídeo TikTok", "Vídeo Reels", "Unboxing"],
+  },
+  {
+    tipo: "legging fitness",
+    titulos: ["Prova de legging fitness", "Look de treino com legging", "Review de legging"],
+    formatos: ["Vídeo TikTok", "Vídeo Reels", "Foto + Legenda"],
+  },
+  {
+    tipo: "tênis de treino",
+    titulos: ["Unboxing de tênis de treino", "Resenha de tênis", "Treino testando o tênis"],
+    formatos: ["Vídeo TikTok", "Vídeo Reels", "Review em vídeo"],
+  },
+  {
+    tipo: "óculos esportivo",
+    titulos: ["Unboxing de óculos esportivo", "Prova de óculos de sol", "Review de óculos"],
+    formatos: ["Foto + Legenda", "Vídeo Reels", "Unboxing"],
+  },
+  {
+    tipo: "conjunto fitness (top e short)",
+    titulos: ["Look de treino com conjunto fitness", "Prova de top fitness", "Review de conjunto fitness"],
+    formatos: ["Vídeo TikTok", "Vídeo Reels", "Foto + Legenda"],
+  },
+  {
+    tipo: "acessório fitness (garrafa, mochila ou munhequeira)",
+    titulos: ["Unboxing de acessório fitness", "Review de acessório de treino", "Dia de treino com acessório novo"],
+    formatos: ["Vídeo Reels", "Foto + Legenda", "Unboxing"],
+  },
+];
+
+function descricaoFit(tipo, marca, black) {
+  if (black) {
+    return `Buscamos criadora para uma campanha premium com a ${marca}, com múltiplas entregas mostrando ${tipo} no dia a dia, prova de uso em contextos diferentes e depoimento sobre qualidade e experiência com o produto.`;
+  }
+  return `Buscamos criador(a) para gravar conteúdo usando ${tipo} da ${marca}, mostrando o produto em uso real e sua experiência com ele no dia a dia ou no treino.`;
+}
+
+function requisitosFit(tipo, marca, black, prazo) {
+  if (black) {
+    return [
+      `Gravar pelo menos 3 vídeos usando ${tipo} da ${marca} em contextos diferentes`,
+      "Conteúdo autêntico, sem edição de corpo ou filtros de silhueta",
+      "Incluir depoimento falado sobre qualidade e experiência com o produto",
+      `Entrega de todos os vídeos em até ${prazo}`,
+    ];
+  }
+  return [
+    `Gravar conteúdo mostrando ${tipo} da ${marca} em uso`,
+    "Conteúdo autêntico, sem edição de corpo ou filtros de silhueta",
+    "Falar sobre qualidade, conforto e experiência com o produto",
+    `Entrega em até ${prazo}`,
+  ];
+}
+
+function gerarVagaFitness(id, marca, pagamento, opts = {}) {
   const prazo = opts.prazo || "5 dias";
   const black = !!opts.black;
+  const produto = TIPOS_PRODUTO_FIT[id % TIPOS_PRODUTO_FIT.length];
+  const titulo = produto.titulos[id % produto.titulos.length];
+
   return {
     id,
     marca,
-    titulo: `${TITULOS_SHAPEWEAR[id % TITULOS_SHAPEWEAR.length]} ${marca}`,
+    titulo: `${titulo} ${marca}`,
     catId: "fitness",
-    formato: opts.formato || FORMATOS_SHAPEWEAR[id % FORMATOS_SHAPEWEAR.length],
+    formato: opts.formato || produto.formatos[id % produto.formatos.length],
     pagamentoLabel: `R$${pagamento}`,
     prazo,
     local: "Remoto",
     candidatos: opts.candidatos ?? (5 + (id * 7) % 40),
     urgente: !!opts.urgente,
     black,
-    descricao: black
-      ? `Buscamos criadora para uma campanha premium com a ${marca}, com múltiplas entregas mostrando a cinta modeladora no dia a dia, prova de caimento com roupas diferentes e depoimento sobre conforto e autoestima.`
-      : `Buscamos criadora para gravar um vídeo de prova da cinta modeladora ${marca}, mostrando o antes e depois ao vestir a peça por baixo da roupa e o caimento no dia a dia.`,
-    requisitos: black
-      ? [`Gravar pelo menos 3 vídeos com a cinta ${marca} em looks diferentes`, "Biotipo real, sem edição de corpo ou filtros de silhueta", "Incluir depoimento falado sobre conforto e autoestima", `Entrega de todos os vídeos em até ${prazo}`]
-      : [`Gravar vídeo de prova (antes/depois) usando a cinta ${marca}`, "Biotipo real, sem edição de corpo ou filtros de silhueta", "Falar sobre conforto e caimento da peça", `Entrega em até ${prazo}`],
+    descricao: descricaoFit(produto.tipo, marca, black),
+    requisitos: requisitosFit(produto.tipo, marca, black, prazo),
   };
 }
 
@@ -85,8 +203,8 @@ const FITNESS_BRANDS_BLACK = [
 ];
 
 const VAGAS_FITNESS = [
-  ...FITNESS_BRANDS.map(([marca, pagamento], i) => gerarVagaShapewear(100 + i, marca, pagamento, { urgente: i % 9 === 0 })),
-  ...FITNESS_BRANDS_BLACK.map(([marca, pagamento], i) => gerarVagaShapewear(200 + i, marca, pagamento, { black: true, prazo: "10 dias", urgente: i % 2 === 0 })),
+  ...FITNESS_BRANDS.map(([marca, pagamento], i) => gerarVagaFitness(100 + i, marca, pagamento, { urgente: i % 9 === 0 })),
+  ...FITNESS_BRANDS_BLACK.map(([marca, pagamento], i) => gerarVagaFitness(200 + i, marca, pagamento, { black: true, prazo: "10 dias", urgente: i % 2 === 0 })),
 ];
 
 const VAGAS = [VAGA_LEMON_FRESH, ...VAGAS_FITNESS];
@@ -372,9 +490,7 @@ export default function App() {
                     </div>
                     <h3 style={{ margin: "0 0 2px", fontSize: 15, fontFamily: "'Space Grotesk', sans-serif", fontWeight: 500 }}>{v.titulo}</h3>
                     <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                      <div style={{ width: 18, height: 18, borderRadius: "50%", background: cat.bg, color: cat.color, fontSize: 10, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, fontFamily: "'Space Grotesk', sans-serif" }}>
-                        {v.marca.charAt(0).toUpperCase()}
-                      </div>
+                      <BrandLogo marca={v.marca} size={18} color={cat.color} bg={cat.bg} />
                       <p style={{ margin: 0, fontSize: 13, color: "#8A82AE" }}>{v.marca}</p>
                     </div>
                     <div style={{ display: "flex", gap: 14, marginTop: 8, fontSize: 12, color: "#8A82AE", flexWrap: "wrap" }}>
@@ -432,9 +548,7 @@ export default function App() {
                   <span style={{ fontSize: 11, fontWeight: 600, padding: "3px 9px", borderRadius: 6, background: cat.bg, color: cat.color }}>{cat.label}</span>
                   <h2 style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: 21, margin: "12px 0 2px", fontWeight: 500 }}>{selectedVaga.titulo}</h2>
                   <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 16 }}>
-                    <div style={{ width: 20, height: 20, borderRadius: "50%", background: cat.bg, color: cat.color, fontSize: 11, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, fontFamily: "'Space Grotesk', sans-serif" }}>
-                      {selectedVaga.marca.charAt(0).toUpperCase()}
-                    </div>
+                    <BrandLogo marca={selectedVaga.marca} size={20} color={cat.color} bg={cat.bg} />
                     <p style={{ margin: 0, color: "#8A82AE", fontSize: 14 }}>{selectedVaga.marca}</p>
                   </div>
 
