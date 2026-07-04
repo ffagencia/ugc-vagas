@@ -390,11 +390,11 @@ export default function App() {
                       ) : (
                         <>
                           <span style={{ width: 7, height: 7, borderRadius: "50%", background: "#3B6D11", flexShrink: 0 }} />
-                          Receba {v.pagamentoLabel || `R$${v.pagamento}`}
+                          {v.pagamentoLabel || `R$${v.pagamento}`}
                         </>
                       )}
                     </div>
-                    <div style={{ fontSize: 11, color: applied ? "#3B6D11" : "#8A82AE", marginTop: 4 }}>{applied ? "Candidatura enviada" : "por entrega"}</div>
+                    <div style={{ fontSize: 11, color: applied ? "#3B6D11" : "#8A82AE", marginTop: 4 }}>{applied ? "Candidatura enviada" : "Inscreva-se na vaga"}</div>
                   </div>
                   <ChevronRight size={18} color="#C4BCE0" />
                 </div>
@@ -448,7 +448,7 @@ export default function App() {
                       ) : (
                         <>
                           <span style={{ width: 7, height: 7, borderRadius: "50%", background: "#3B6D11", flexShrink: 0 }} />
-                          Receba {selectedVaga.pagamentoLabel || `R$${selectedVaga.pagamento}`}
+                          {selectedVaga.pagamentoLabel || `R$${selectedVaga.pagamento}`}
                         </>
                       )}
                     </span>
