@@ -2,7 +2,7 @@ import React, { useState, useMemo, useEffect } from "react";
 import netlifyIdentity from "netlify-identity-widget";
 import {
   Search, MapPin, Clock, Users, Zap, X, Check, ChevronRight,
-  AtSign, Link2, Banknote, ArrowLeft, Lock, Crown
+  AtSign, Link2, Banknote, ArrowLeft, Lock, Crown, Sparkles
 } from "lucide-react";
 
 const FONTS = `
@@ -14,6 +14,11 @@ const FONTS = `
   .ugc-price-block { text-align: left !important; margin-top: 4px; padding-left: 20px; }
   .ugc-stats-strip { gap: 16px !important; flex-wrap: wrap !important; }
   .ugc-header-row { gap: 12px !important; }
+}
+
+@keyframes ugc-toast-in {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 `;
 
@@ -30,16 +35,68 @@ const CATS = [
 
 const FORMATOS = ["Vídeo TikTok", "Vídeo Reels", "Foto + Legenda", "Review em vídeo", "Unboxing"];
 
-const VAGAS = [
-  { id: 1, marca: "Lemon Fresh", titulo: "Indicação loja Apple", catId: "eletronicos", formato: "TikTok, Reels e Unboxing", pagamentoLabel: "R$800 ou Apple Watch seminovo", prazo: "7 dias", local: "Remoto", candidatos: 6, urgente: true, black: true,
-    descricao: "Buscamos criador para produzir conteúdo de review de um iPhone novo ou Apple Watch, mostrando o produto em uso real e indicando a loja de compra.",
-    requisitos: ["Gravar de 6 a 8 vídeos ao todo (TikTok, Reels e Unboxing)", "Focar em review honesto do iPhone ou Apple Watch", "Citar e indicar a loja Lemon Fresh no conteúdo", "Entrega de todos os vídeos em até 7 dias após receber o produto"] },
+const VAGA_LEMON_FRESH = { id: 1, marca: "Lemon Fresh", titulo: "Indicação loja Apple", catId: "eletronicos", formato: "TikTok, Reels e Unboxing", pagamentoLabel: "R$800 ou Apple Watch seminovo", prazo: "7 dias", local: "Remoto", candidatos: 6, urgente: true, black: true,
+  descricao: "Buscamos criador para produzir conteúdo de review de um iPhone novo ou Apple Watch, mostrando o produto em uso real e indicando a loja de compra.",
+  requisitos: ["Gravar de 6 a 8 vídeos ao todo (TikTok, Reels e Unboxing)", "Focar em review honesto do iPhone ou Apple Watch", "Citar e indicar a loja Lemon Fresh no conteúdo", "Entrega de todos os vídeos em até 7 dias após receber o produto"] };
+
+// Gerador de vagas do setor Fitness (cintas modeladoras) — mantém o padrão de conteúdo
+// (prova de roupa / caimento / conforto) coerente com o tipo de produto, personalizado por marca.
+const TITULOS_SHAPEWEAR = ["Prova de cinta modeladora", "Unboxing de cinta modeladora", "Review de cinta modeladora"];
+const FORMATOS_SHAPEWEAR = ["Vídeo TikTok", "Vídeo Reels", "Unboxing"];
+
+function gerarVagaShapewear(id, marca, pagamento, opts = {}) {
+  const prazo = opts.prazo || "5 dias";
+  const black = !!opts.black;
+  return {
+    id,
+    marca,
+    titulo: `${TITULOS_SHAPEWEAR[id % TITULOS_SHAPEWEAR.length]} ${marca}`,
+    catId: "fitness",
+    formato: opts.formato || FORMATOS_SHAPEWEAR[id % FORMATOS_SHAPEWEAR.length],
+    pagamentoLabel: `R$${pagamento}`,
+    prazo,
+    local: "Remoto",
+    candidatos: opts.candidatos ?? (5 + (id * 7) % 40),
+    urgente: !!opts.urgente,
+    black,
+    descricao: black
+      ? `Buscamos criadora para uma campanha premium com a ${marca}, com múltiplas entregas mostrando a cinta modeladora no dia a dia, prova de caimento com roupas diferentes e depoimento sobre conforto e autoestima.`
+      : `Buscamos criadora para gravar um vídeo de prova da cinta modeladora ${marca}, mostrando o antes e depois ao vestir a peça por baixo da roupa e o caimento no dia a dia.`,
+    requisitos: black
+      ? [`Gravar pelo menos 3 vídeos com a cinta ${marca} em looks diferentes`, "Biotipo real, sem edição de corpo ou filtros de silhueta", "Incluir depoimento falado sobre conforto e autoestima", `Entrega de todos os vídeos em até ${prazo}`]
+      : [`Gravar vídeo de prova (antes/depois) usando a cinta ${marca}`, "Biotipo real, sem edição de corpo ou filtros de silhueta", "Falar sobre conforto e caimento da peça", `Entrega em até ${prazo}`],
+  };
+}
+
+const FITNESS_BRANDS = [
+  ["Lupo", 650], ["Plié", 700], ["Esbelt", 600], ["Trifil", 720], ["Demillus", 680],
+  ["Dilady", 590], ["Selene", 610], ["Duloren", 750], ["Mondress", 640], ["Loba", 560],
+  ["Catarina", 580], ["Le Paris", 690], ["New Form", 630], ["Dupin", 570], ["Midas Time", 710],
+  ["Shanty Lingerie", 660], ["Point Mix", 620], ["Hope", 780], ["Scala", 600], ["Darlequê", 590],
+  ["Liz", 730], ["Recco", 610], ["Zee Rucci", 670], ["Slim Fit", 550], ["Cocar", 600],
+  ["Valisere", 800], ["De Millus", 690], ["Sofisti", 570], ["Corfarm", 540], ["Bodyboo", 650],
+  ["Cinta Modeladora Shaper", 520], ["Miss Bela", 560], ["Uniê", 610], ["Sculptshe", 900],
+  ["Fajas Salomé", 630], ["Fiorella", 700], ["Salomé", 640], ["Cocoon Shapewear", 680],
+  ["Vedette", 1100], ["Squeem", 1200],
 ];
+
+const FITNESS_BRANDS_BLACK = [
+  ["Spanx", 2200], ["Leonisa", 2400], ["Ann Chery", 2100], ["Miraclesuit", 2300], ["Fajas Colombianas", 2000],
+];
+
+const VAGAS_FITNESS = [
+  ...FITNESS_BRANDS.map(([marca, pagamento], i) => gerarVagaShapewear(100 + i, marca, pagamento, { urgente: i % 9 === 0 })),
+  ...FITNESS_BRANDS_BLACK.map(([marca, pagamento], i) => gerarVagaShapewear(200 + i, marca, pagamento, { black: true, prazo: "10 dias", urgente: i % 2 === 0 })),
+];
+
+const VAGAS = [VAGA_LEMON_FRESH, ...VAGAS_FITNESS];
 
 // Referência para o contador de "marcas parceiras" que cresce sozinho a cada 30 minutos
 const PARCEIRAS_BASE = 212;
 const PARCEIRAS_REFERENCIA = new Date("2026-07-04T00:00:00").getTime();
 const PARCEIRAS_INTERVALO_MS = 30 * 60 * 1000;
+
+const NOMES_FAKE = ["João", "Maria", "Pedro", "Ana", "Lucas", "Camila", "Rafael", "Bianca", "Gustavo", "Larissa", "Bruno", "Juliana", "Felipe", "Aline", "Diego", "Patrícia", "Rodrigo", "Fernanda", "Thiago", "Carla"];
 
 const catInfo = (id) => CATS.find((c) => c.id === id);
 
@@ -70,6 +127,23 @@ export default function App() {
 
   const isAssinante = !!user?.app_metadata?.roles?.includes("assinante");
   const isAssinanteBlack = !!user?.app_metadata?.roles?.includes("assinante_black");
+
+  // Toast de prova social ("Fulano fechou parceria com Marca X") — só aparece pra quem ainda não é assinante
+  const [toast, setToast] = useState(null);
+
+  useEffect(() => {
+    if (isAssinante) { setToast(null); return; }
+    let timeoutId;
+    const dispararToast = () => {
+      const nome = NOMES_FAKE[Math.floor(Math.random() * NOMES_FAKE.length)];
+      const marca = VAGAS[Math.floor(Math.random() * VAGAS.length)].marca;
+      setToast({ nome, marca });
+      setTimeout(() => setToast(null), 5000);
+      timeoutId = setTimeout(dispararToast, 9000 + Math.random() * 8000);
+    };
+    timeoutId = setTimeout(dispararToast, 4000);
+    return () => clearTimeout(timeoutId);
+  }, [isAssinante]);
 
   const calcularParceiras = () =>
     PARCEIRAS_BASE + Math.max(0, Math.floor((Date.now() - PARCEIRAS_REFERENCIA) / PARCEIRAS_INTERVALO_MS));
@@ -430,6 +504,24 @@ export default function App() {
             )}
           </div>
         </Overlay>
+      )}
+
+      {/* TOAST DE PROVA SOCIAL - só aparece pra quem não é assinante */}
+      {toast && !isAssinante && (
+        <div style={{
+          position: "fixed", left: 16, bottom: 16, zIndex: 60,
+          display: "flex", alignItems: "center", gap: 10, background: "#fff",
+          border: "1px solid #E7E2F5", borderRadius: 12, padding: "12px 16px",
+          boxShadow: "0 8px 24px rgba(29,22,51,0.14)", maxWidth: 300,
+          animation: "ugc-toast-in .3s ease-out",
+        }}>
+          <div style={{ width: 34, height: 34, borderRadius: "50%", background: "#EAF3DE", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+            <Sparkles size={16} color="#3B6D11" />
+          </div>
+          <p style={{ margin: 0, fontSize: 13, color: "#3A3355", lineHeight: 1.4 }}>
+            <strong>{toast.nome}</strong> fechou uma parceria com <strong>{toast.marca}</strong>
+          </p>
+        </div>
       )}
     </div>
   );
