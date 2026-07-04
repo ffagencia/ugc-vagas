@@ -371,7 +371,12 @@ export default function App() {
                       )}
                     </div>
                     <h3 style={{ margin: "0 0 2px", fontSize: 15, fontFamily: "'Space Grotesk', sans-serif", fontWeight: 500 }}>{v.titulo}</h3>
-                    <p style={{ margin: 0, fontSize: 13, color: "#8A82AE" }}>{v.marca}</p>
+                    <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                      <div style={{ width: 18, height: 18, borderRadius: "50%", background: cat.bg, color: cat.color, fontSize: 10, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, fontFamily: "'Space Grotesk', sans-serif" }}>
+                        {v.marca.charAt(0).toUpperCase()}
+                      </div>
+                      <p style={{ margin: 0, fontSize: 13, color: "#8A82AE" }}>{v.marca}</p>
+                    </div>
                     <div style={{ display: "flex", gap: 14, marginTop: 8, fontSize: 12, color: "#8A82AE", flexWrap: "wrap" }}>
                       <span style={{ display: "flex", alignItems: "center", gap: 4 }}><Clock size={12} />{v.prazo}</span>
                       <span style={{ display: "flex", alignItems: "center", gap: 4 }}><MapPin size={12} />{v.local}</span>
@@ -379,8 +384,15 @@ export default function App() {
                     </div>
                   </div>
                   <div className="ugc-price-block" style={{ textAlign: "right", flexShrink: 0 }}>
-                    <div style={{ fontFamily: "'JetBrains Mono', monospace", fontWeight: 700, fontSize: 15, color: v.black ? "#8A6D1F" : accentDark, maxWidth: 130, display: "flex", alignItems: "center", gap: 4, justifyContent: "flex-end" }}>
-                      {v.black && !isAssinanteBlack ? <><Lock size={12} /> ***</> : (v.pagamentoLabel || `R$${v.pagamento}`)}
+                    <div style={{ fontFamily: "'JetBrains Mono', monospace", fontWeight: 700, fontSize: 15, color: v.black ? "#8A6D1F" : accentDark, maxWidth: 150, display: "flex", alignItems: "center", gap: 5, justifyContent: "flex-end" }}>
+                      {v.black && !isAssinanteBlack ? (
+                        <><Lock size={12} /> ***</>
+                      ) : (
+                        <>
+                          <span style={{ width: 7, height: 7, borderRadius: "50%", background: "#3B6D11", flexShrink: 0 }} />
+                          Receba {v.pagamentoLabel || `R$${v.pagamento}`}
+                        </>
+                      )}
                     </div>
                     <div style={{ fontSize: 11, color: applied ? "#3B6D11" : "#8A82AE", marginTop: 4 }}>{applied ? "Candidatura enviada" : "por entrega"}</div>
                   </div>
@@ -419,14 +431,26 @@ export default function App() {
                 <>
                   <span style={{ fontSize: 11, fontWeight: 600, padding: "3px 9px", borderRadius: 6, background: cat.bg, color: cat.color }}>{cat.label}</span>
                   <h2 style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: 21, margin: "12px 0 2px", fontWeight: 500 }}>{selectedVaga.titulo}</h2>
-                  <p style={{ margin: "0 0 16px", color: "#8A82AE", fontSize: 14 }}>{selectedVaga.marca}</p>
+                  <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 16 }}>
+                    <div style={{ width: 20, height: 20, borderRadius: "50%", background: cat.bg, color: cat.color, fontSize: 11, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, fontFamily: "'Space Grotesk', sans-serif" }}>
+                      {selectedVaga.marca.charAt(0).toUpperCase()}
+                    </div>
+                    <p style={{ margin: 0, color: "#8A82AE", fontSize: 14 }}>{selectedVaga.marca}</p>
+                  </div>
 
                   <div style={{ display: "flex", gap: 18, marginBottom: 18, fontSize: 13, color: "#5F5A78", flexWrap: "wrap" }}>
                     <span style={{ display: "flex", alignItems: "center", gap: 4 }}><Clock size={13} />{selectedVaga.prazo}</span>
                     <span style={{ display: "flex", alignItems: "center", gap: 4 }}><MapPin size={13} />{selectedVaga.local}</span>
                     <span style={{ display: "flex", alignItems: "center", gap: 4 }}><Users size={13} />{selectedVaga.candidatos} candidatos</span>
                     <span style={{ display: "flex", alignItems: "center", gap: 4, fontFamily: "'JetBrains Mono', monospace", fontWeight: 700, color: "#4B1528" }}>
-                      <Banknote size={13} />{selectedVaga.black && !isAssinanteBlack ? "***" : (selectedVaga.pagamentoLabel || `R$${selectedVaga.pagamento}`)}
+                      {selectedVaga.black && !isAssinanteBlack ? (
+                        <><Banknote size={13} /> ***</>
+                      ) : (
+                        <>
+                          <span style={{ width: 7, height: 7, borderRadius: "50%", background: "#3B6D11", flexShrink: 0 }} />
+                          Receba {selectedVaga.pagamentoLabel || `R$${selectedVaga.pagamento}`}
+                        </>
+                      )}
                     </span>
                   </div>
 
