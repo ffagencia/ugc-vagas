@@ -2,7 +2,7 @@ import React, { useState, useMemo, useEffect } from "react";
 import netlifyIdentity from "netlify-identity-widget";
 import {
   Search, MapPin, Clock, Users, Zap, X, Check, ChevronRight,
-  AtSign, Link2, Plus, Banknote, ArrowLeft, Lock
+  AtSign, Link2, Banknote, ArrowLeft, Lock, Crown
 } from "lucide-react";
 
 const FONTS = `
@@ -31,10 +31,15 @@ const CATS = [
 const FORMATOS = ["Vídeo TikTok", "Vídeo Reels", "Foto + Legenda", "Review em vídeo", "Unboxing"];
 
 const VAGAS = [
-  { id: 1, marca: "Lemon Fresh", titulo: "Indicação loja Apple", catId: "eletronicos", formato: "TikTok, Reels e Unboxing", pagamentoLabel: "R$800 ou Apple Watch seminovo", prazo: "7 dias", local: "Remoto", candidatos: 6, urgente: true,
+  { id: 1, marca: "Lemon Fresh", titulo: "Indicação loja Apple", catId: "eletronicos", formato: "TikTok, Reels e Unboxing", pagamentoLabel: "R$800 ou Apple Watch seminovo", prazo: "7 dias", local: "Remoto", candidatos: 6, urgente: true, black: true,
     descricao: "Buscamos criador para produzir conteúdo de review de um iPhone novo ou Apple Watch, mostrando o produto em uso real e indicando a loja de compra.",
     requisitos: ["Gravar de 6 a 8 vídeos ao todo (TikTok, Reels e Unboxing)", "Focar em review honesto do iPhone ou Apple Watch", "Citar e indicar a loja Lemon Fresh no conteúdo", "Entrega de todos os vídeos em até 7 dias após receber o produto"] },
 ];
+
+// Referência para o contador de "marcas parceiras" que cresce sozinho a cada 30 minutos
+const PARCEIRAS_BASE = 212;
+const PARCEIRAS_REFERENCIA = new Date("2026-07-04T00:00:00").getTime();
+const PARCEIRAS_INTERVALO_MS = 30 * 60 * 1000;
 
 const catInfo = (id) => CATS.find((c) => c.id === id);
 
@@ -43,6 +48,9 @@ const SHEET_WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbx_ZDz4cdlVmo
 
 // Cole aqui o link de checkout da assinatura na Kiwify
 const CHECKOUT_URL = "https://pay.kiwify.com.br/05L4CQS";
+
+// Placeholder - trocar quando o checkout do plano Black estiver pronto na Kiwify
+const CHECKOUT_URL_BLACK = "COLE_AQUI_O_LINK_DO_CHECKOUT_BLACK";
 
 export default function App() {
   const [user, setUser] = useState(null);
@@ -61,27 +69,38 @@ export default function App() {
   }, []);
 
   const isAssinante = !!user?.app_metadata?.roles?.includes("assinante");
+  const isAssinanteBlack = !!user?.app_metadata?.roles?.includes("assinante_black");
+
+  const calcularParceiras = () =>
+    PARCEIRAS_BASE + Math.max(0, Math.floor((Date.now() - PARCEIRAS_REFERENCIA) / PARCEIRAS_INTERVALO_MS));
+
+  const [marcasParceiras, setMarcasParceiras] = useState(calcularParceiras);
+
+  useEffect(() => {
+    const id = setInterval(() => setMarcasParceiras(calcularParceiras()), 60 * 1000);
+    return () => clearInterval(id);
+  }, []);
+
 
   const goToCheckout = () => {
     const emailParam = user?.email ? `?email=${encodeURIComponent(user.email)}` : "";
     window.location.href = CHECKOUT_URL + emailParam;
   };
 
+  const goToCheckoutBlack = () => {
+    const emailParam = user?.email ? `?email=${encodeURIComponent(user.email)}` : "";
+    window.location.href = CHECKOUT_URL_BLACK + emailParam;
+  };
+
   const [mode, setMode] = useState("criador");
   const [query, setQuery] = useState("");
   const [catFilter, setCatFilter] = useState([]);
-  const [urgenteOnly, setUrgenteOnly] = useState(false);
+  const [blackOnly, setBlackOnly] = useState(false);
   const [selectedVaga, setSelectedVaga] = useState(null);
   const [applyOpen, setApplyOpen] = useState(false);
   const [applyForm, setApplyForm] = useState({ nome: "", rede: "", link: "" });
   const [appliedIds, setAppliedIds] = useState([]);
   const [applySuccess, setApplySuccess] = useState(false);
-
-  const [postedVagas, setPostedVagas] = useState([
-    { id: 101, marca: "Sua Marca", titulo: "Vídeo unboxing kit lançamento", catId: "beleza", formato: "Vídeo TikTok", pagamento: 150, prazo: "5 dias", candidatos: 8 },
-  ]);
-  const [postForm, setPostForm] = useState({ titulo: "", catId: "beleza", formato: FORMATOS[0], pagamento: "", prazo: "" });
-  const [postSuccess, setPostSuccess] = useState(false);
 
   const accent = mode === "criador" ? "#D4537E" : "#534AB7";
   const accentBg = mode === "criador" ? "#FBEAF0" : "#EEEDFE";
@@ -91,10 +110,10 @@ export default function App() {
     return VAGAS.filter((v) => {
       const matchQuery = (v.titulo + v.marca).toLowerCase().includes(query.toLowerCase());
       const matchCat = catFilter.length === 0 || catFilter.includes(v.catId);
-      const matchUrgente = !urgenteOnly || v.urgente;
-      return matchQuery && matchCat && matchUrgente;
+      const matchBlack = !blackOnly || v.black;
+      return matchQuery && matchCat && matchBlack;
     });
-  }, [query, catFilter, urgenteOnly]);
+  }, [query, catFilter, blackOnly]);
 
   const toggleCat = (id) => {
     setCatFilter((prev) => prev.includes(id) ? prev.filter((c) => c !== id) : [...prev, id]);
@@ -128,24 +147,6 @@ export default function App() {
 
     setAppliedIds((prev) => [...prev, selectedVaga.id]);
     setApplySuccess(true);
-  };
-
-  const submitPost = () => {
-    if (!postForm.titulo || !postForm.pagamento || !postForm.prazo) return;
-    const nova = {
-      id: Date.now(),
-      marca: "Sua Marca",
-      titulo: postForm.titulo,
-      catId: postForm.catId,
-      formato: postForm.formato,
-      pagamento: Number(postForm.pagamento),
-      prazo: postForm.prazo + " dias",
-      candidatos: 0,
-    };
-    setPostedVagas((prev) => [nova, ...prev]);
-    setPostForm({ titulo: "", catId: "beleza", formato: FORMATOS[0], pagamento: "", prazo: "" });
-    setPostSuccess(true);
-    setTimeout(() => setPostSuccess(false), 2500);
   };
 
   if (!authReady) {
@@ -226,7 +227,7 @@ export default function App() {
           {[
             ["128", "vagas ativas"],
             ["3.4k", "criadores cadastrados"],
-            ["212", "marcas parceiras"],
+            [marcasParceiras, "marcas parceiras"],
           ].map(([num, label], i) => (
             <div key={i} style={{ display: "flex", alignItems: "baseline", gap: 6 }}>
               <span style={{ fontWeight: 700, fontSize: 15, color: accentDark }}>{num}</span>
@@ -245,15 +246,15 @@ export default function App() {
               <CategoryChip key={c.id} active={catFilter.includes(c.id)} onClick={() => toggleCat(c.id)} color={c.color} label={c.label} />
             ))}
             <button
-              onClick={() => setUrgenteOnly((u) => !u)}
+              onClick={() => isAssinanteBlack ? setBlackOnly((b) => !b) : goToCheckoutBlack()}
               style={{
-                display: "flex", alignItems: "center", gap: 6, border: urgenteOnly ? "none" : "1px solid #E1DCF5",
-                background: urgenteOnly ? "#854F0B" : "#fff", color: urgenteOnly ? "#fff" : "#3A3355",
+                display: "flex", alignItems: "center", gap: 6, border: blackOnly ? "none" : "1px solid #2A2A2A",
+                background: blackOnly ? "#111111" : "#1A1A1A", color: "#F0C674",
                 borderRadius: 999, padding: "7px 14px", fontSize: 13, fontWeight: 600, cursor: "pointer",
                 fontFamily: "'Inter', sans-serif", whiteSpace: "nowrap",
               }}
             >
-              <Zap size={13} /> Urgentes
+              <Crown size={13} /> Black {!isAssinanteBlack && <Lock size={11} />}
             </button>
           </div>
 
@@ -272,14 +273,23 @@ export default function App() {
               const cat = catInfo(v.catId);
               const applied = appliedIds.includes(v.id);
               return (
-                <div key={v.id} onClick={() => isAssinante ? setSelectedVaga(v) : goToCheckout()} className="ugc-vaga-card" style={{
-                  display: "flex", background: "#fff", border: "1px solid #E7E2F5", borderRadius: 14,
+                <div key={v.id} onClick={() => {
+                  if (v.black && !isAssinanteBlack) return goToCheckoutBlack();
+                  if (!isAssinante) return goToCheckout();
+                  setSelectedVaga(v);
+                }} className="ugc-vaga-card" style={{
+                  display: "flex", background: "#fff", border: v.black ? "1px solid #E8D293" : "1px solid #E7E2F5", borderRadius: 14,
                   padding: "16px 18px", cursor: "pointer", gap: 14, alignItems: "center", transition: "border-color .15s",
                 }}>
-                  <div style={{ width: 6, alignSelf: "stretch", borderRadius: 4, background: cat.color, flexShrink: 0 }} />
+                  <div style={{ width: 6, alignSelf: "stretch", borderRadius: 4, background: v.black ? "#111111" : cat.color, flexShrink: 0 }} />
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4, flexWrap: "wrap" }}>
                       <span style={{ fontSize: 11, fontWeight: 600, padding: "2px 8px", borderRadius: 6, background: cat.bg, color: cat.color }}>{cat.label}</span>
+                      {v.black && (
+                        <span style={{ fontSize: 11, fontWeight: 600, padding: "2px 8px", borderRadius: 6, background: "#111111", color: "#F0C674", display: "flex", alignItems: "center", gap: 3 }}>
+                          <Crown size={10} /> Black
+                        </span>
+                      )}
                       {v.urgente && (
                         <span style={{ fontSize: 11, fontWeight: 600, padding: "2px 8px", borderRadius: 6, background: "#FAEEDA", color: "#854F0B", display: "flex", alignItems: "center", gap: 3 }}>
                           <Zap size={10} /> Urgente
@@ -295,8 +305,8 @@ export default function App() {
                     </div>
                   </div>
                   <div className="ugc-price-block" style={{ textAlign: "right", flexShrink: 0 }}>
-                    <div style={{ fontFamily: "'JetBrains Mono', monospace", fontWeight: 700, fontSize: 15, color: accentDark, maxWidth: 130, display: "flex", alignItems: "center", gap: 4, justifyContent: "flex-end" }}>
-                      {isAssinante ? (v.pagamentoLabel || `R$${v.pagamento}`) : <><Lock size={12} /> ***</>}
+                    <div style={{ fontFamily: "'JetBrains Mono', monospace", fontWeight: 700, fontSize: 15, color: v.black ? "#8A6D1F" : accentDark, maxWidth: 130, display: "flex", alignItems: "center", gap: 4, justifyContent: "flex-end" }}>
+                      {v.black && !isAssinanteBlack ? <><Lock size={12} /> ***</> : (v.pagamentoLabel || `R$${v.pagamento}`)}
                     </div>
                     <div style={{ fontSize: 11, color: applied ? "#3B6D11" : "#8A82AE", marginTop: 4 }}>{applied ? "Candidatura enviada" : "por entrega"}</div>
                   </div>
@@ -310,66 +320,16 @@ export default function App() {
           </section>
         </main>
       ) : (
-        <main className="ugc-main-grid" style={{ maxWidth: 1100, margin: "0 auto", padding: "24px 20px 80px", display: "grid", gridTemplateColumns: "340px 1fr", gap: 24 }}>
-          {/* POST FORM */}
-          <aside style={{ background: "#fff", border: "1px solid #E7E2F5", borderRadius: 14, padding: 20, alignSelf: "start" }}>
-            <h3 style={{ margin: "0 0 14px", fontSize: 16, fontFamily: "'Space Grotesk', sans-serif", display: "flex", alignItems: "center", gap: 6 }}>
-              <Plus size={16} color={accent} /> Postar nova vaga
-            </h3>
-            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-              <FieldLabel label="Título da vaga">
-                <input value={postForm.titulo} onChange={(e) => setPostForm({ ...postForm, titulo: e.target.value })} placeholder="Ex: Unboxing produto X" style={inputStyle} />
-              </FieldLabel>
-              <FieldLabel label="Categoria">
-                <select value={postForm.catId} onChange={(e) => setPostForm({ ...postForm, catId: e.target.value })} style={inputStyle}>
-                  {CATS.map((c) => <option key={c.id} value={c.id}>{c.label}</option>)}
-                </select>
-              </FieldLabel>
-              <FieldLabel label="Formato">
-                <select value={postForm.formato} onChange={(e) => setPostForm({ ...postForm, formato: e.target.value })} style={inputStyle}>
-                  {FORMATOS.map((f) => <option key={f} value={f}>{f}</option>)}
-                </select>
-              </FieldLabel>
-              <div style={{ display: "flex", gap: 10 }}>
-                <FieldLabel label="Pagamento (R$)">
-                  <input type="number" value={postForm.pagamento} onChange={(e) => setPostForm({ ...postForm, pagamento: e.target.value })} placeholder="150" style={inputStyle} />
-                </FieldLabel>
-                <FieldLabel label="Prazo (dias)">
-                  <input type="number" value={postForm.prazo} onChange={(e) => setPostForm({ ...postForm, prazo: e.target.value })} placeholder="5" style={inputStyle} />
-                </FieldLabel>
-              </div>
-              <button onClick={submitPost} style={{ marginTop: 6, background: accent, color: "#fff", border: "none", borderRadius: 10, padding: "11px", fontWeight: 600, fontSize: 14, cursor: "pointer", fontFamily: "'Inter', sans-serif" }}>
-                Publicar vaga
-              </button>
-              {postSuccess && <p style={{ fontSize: 12, color: "#3B6D11", margin: 0, textAlign: "center" }}>Vaga publicada com sucesso.</p>}
+        <main style={{ maxWidth: 1100, margin: "0 auto", padding: "24px 20px 80px" }}>
+          <div style={{ background: "#fff", border: "1px solid #E7E2F5", borderRadius: 16, padding: "48px 32px", textAlign: "center", maxWidth: 480, margin: "40px auto 0" }}>
+            <div style={{ width: 52, height: 52, borderRadius: "50%", background: "#EEEDFE", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 18px" }}>
+              <Lock size={22} color="#534AB7" />
             </div>
-          </aside>
-
-          {/* POSTED LIST */}
-          <section>
-            <p style={{ fontSize: 13, color: "#8A82AE", margin: "0 0 12px" }}>Suas vagas publicadas ({postedVagas.length})</p>
-            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-              {postedVagas.map((v) => {
-                const cat = catInfo(v.catId);
-                return (
-                  <div key={v.id} style={{ display: "flex", background: "#fff", border: "1px solid #E7E2F5", borderRadius: 14, padding: "16px 18px", gap: 14, alignItems: "center" }}>
-                    <div style={{ width: 6, alignSelf: "stretch", borderRadius: 4, background: cat.color, flexShrink: 0 }} />
-                    <div style={{ flex: 1 }}>
-                      <span style={{ fontSize: 11, fontWeight: 600, padding: "2px 8px", borderRadius: 6, background: cat.bg, color: cat.color }}>{cat.label}</span>
-                      <h3 style={{ margin: "6px 0 2px", fontSize: 15, fontFamily: "'Space Grotesk', sans-serif", fontWeight: 500 }}>{v.titulo}</h3>
-                      <p style={{ margin: 0, fontSize: 12, color: "#8A82AE" }}>{v.formato} · prazo de {v.prazo}</p>
-                    </div>
-                    <div style={{ textAlign: "right" }}>
-                      <div style={{ fontFamily: "'JetBrains Mono', monospace", fontWeight: 700, fontSize: 17, color: accentDark }}>R${v.pagamento}</div>
-                      <div style={{ fontSize: 11, color: "#8A82AE", marginTop: 4, display: "flex", alignItems: "center", gap: 4, justifyContent: "flex-end" }}>
-                        <Users size={11} />{v.candidatos} candidatos
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </section>
+            <h2 style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: 19, margin: "0 0 8px", fontWeight: 500 }}>Em breve para marcas</h2>
+            <p style={{ fontSize: 14, color: "#8A82AE", margin: 0, lineHeight: 1.6 }}>
+              A função de postar vagas está temporariamente indisponível enquanto finalizamos o processo para marcas parceiras.
+            </p>
+          </div>
         </main>
       )}
 
@@ -392,7 +352,7 @@ export default function App() {
                     <span style={{ display: "flex", alignItems: "center", gap: 4 }}><MapPin size={13} />{selectedVaga.local}</span>
                     <span style={{ display: "flex", alignItems: "center", gap: 4 }}><Users size={13} />{selectedVaga.candidatos} candidatos</span>
                     <span style={{ display: "flex", alignItems: "center", gap: 4, fontFamily: "'JetBrains Mono', monospace", fontWeight: 700, color: "#4B1528" }}>
-                      <Banknote size={13} />{selectedVaga.pagamentoLabel || `R$${selectedVaga.pagamento}`}
+                      <Banknote size={13} />{selectedVaga.black && !isAssinanteBlack ? "***" : (selectedVaga.pagamentoLabel || `R$${selectedVaga.pagamento}`)}
                     </span>
                   </div>
 
@@ -405,7 +365,11 @@ export default function App() {
 
                   <button
                     disabled={applied}
-                    onClick={() => isAssinante ? openApply(selectedVaga) : goToCheckout()}
+                    onClick={() => {
+                      if (selectedVaga.black && !isAssinanteBlack) return goToCheckoutBlack();
+                      if (!isAssinante) return goToCheckout();
+                      openApply(selectedVaga);
+                    }}
                     style={{
                       width: "100%", border: "none", borderRadius: 10, padding: "13px", fontWeight: 600, fontSize: 14,
                       cursor: applied ? "default" : "pointer", fontFamily: "'Inter', sans-serif",
