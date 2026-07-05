@@ -2,7 +2,7 @@ import React, { useState, useMemo, useEffect } from "react";
 import netlifyIdentity from "netlify-identity-widget";
 import {
   Search, MapPin, Clock, Users, Zap, X, Check, ChevronRight,
-  AtSign, Link2, Banknote, ArrowLeft, Lock, Crown, Sparkles
+  AtSign, Link2, ArrowLeft, Lock, Crown, Sparkles
 } from "lucide-react";
 
 const FONTS = `
@@ -33,250 +33,156 @@ const CATS = [
   { id: "tech", label: "App / Tech", color: "#3C3489", bg: "#EEEDFE" },
 ];
 
+const FORMATOS = ["Vídeo TikTok", "Vídeo Reels", "Foto + Legenda", "Review em vídeo", "Unboxing"];
+
 const VAGA_LEMON_FRESH = { id: 1, marca: "Lemon Fresh", titulo: "Indicação loja Apple", catId: "eletronicos", formato: "TikTok, Reels e Unboxing", pagamentoLabel: "R$800 ou Apple Watch seminovo", prazo: "7 dias", local: "Remoto", candidatos: 6, urgente: true, black: true,
   descricao: "Buscamos criador para produzir conteúdo de review de um iPhone novo ou Apple Watch, mostrando o produto em uso real e indicando a loja de compra.",
   requisitos: ["Gravar de 6 a 8 vídeos ao todo (TikTok, Reels e Unboxing)", "Focar em review honesto do iPhone ou Apple Watch", "Citar e indicar a loja Lemon Fresh no conteúdo", "Entrega de todos os vídeos em até 7 dias após receber o produto"] };
 
-// ---------------------------------------------------------------------------
-// LOGOS DAS MARCAS
-// OBS: a API do Clearbit (logo.clearbit.com) foi DESLIGADA permanentemente em
-// dez/2025 pela HubSpot, por isso usamos o serviço de favicons do Google
-// (google.com/s2/favicons), que é gratuito, não exige chave de API e é
-// bem mais estável. Se a imagem falhar mesmo assim, cai automaticamente no
-// círculo com a inicial da marca (fallback visual, nunca quebra o layout).
-// ---------------------------------------------------------------------------
-const LOGO_DOMAINS = {
-  "Lupo": "lupo.com.br",
-  "Loba": "lupo.com.br",
-  "Plié": "plie.com.br",
-  "Esbelt": "esbelt.com.br",
-  "Trifil": "trifil.com.br",
-  "Demillus": "demillus.com.br",
-  "De Millus": "demillus.com.br",
-  "Dilady": "dilady.com.br",
-  "Selene": "selene.com.br",
-  "Duloren": "duloren.com.br",
-  "Mondress": "mondress.com.br",
-  "Le Paris": "leparis.com.br",
-  "New Form": "newform.com.br",
-  "Dupin": "dupin.com.br",
-  "Midas Time": "midastime.com.br",
-  "Shanty Lingerie": "shanty.com.br",
-  "Point Mix": "pointmix.com.br",
-  "Hope": "hopelingerie.com.br",
-  "Scala": "scala.com.br",
-  "Darlequê": "darleque.com.br",
-  "Liz": "liz.com.br",
-  "Recco": "recco.com.br",
-  "Zee Rucci": "zeerucci.com",
-  "Valisere": "valisere.com.br",
-  "Bodyboo": "bodyboo.com.br",
-  "Sculptshe": "sculptshe.com",
-  "Vedette": "vedetteshapewear.com",
-  "Squeem": "squeem.com",
-  "Spanx": "spanx.com",
-  "Leonisa": "leonisa.com",
-  "Ann Chery": "annchery.com",
-  "Miraclesuit": "miraclesuit.com",
-  "Sallve": "sallve.com.br",
-  "Cadiveu Professional": "cadiveu.com.br",
-  "Inoar": "inoar.com",
-  "Impala": "impala.com.br",
-  "Bio Extratus": "bioextratus.com.br",
-  "Forever Liss": "foreverliss.com.br",
-  "Vichy Brasil": "vichy.com.br",
-  "Phebo": "phebo.com.br",
-};
+// Gerador de vagas do setor Fitness (cintas modeladoras) — mantém o padrão de conteúdo
+// (prova de roupa / caimento / conforto) coerente com o tipo de produto, personalizado por marca.
+const TITULOS_SHAPEWEAR = ["Prova de cinta modeladora", "Unboxing de cinta modeladora", "Review de cinta modeladora"];
+const FORMATOS_SHAPEWEAR = ["Vídeo TikTok", "Vídeo Reels", "Unboxing"];
 
-function BrandLogo({ marca, size = 18, color, bg }) {
-  const [failed, setFailed] = useState(false);
-  const domain = LOGO_DOMAINS[marca];
-
-  if (!domain || failed) {
-    return (
-      <div style={{ width: size, height: size, borderRadius: "50%", background: bg, color, fontSize: size * 0.55, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, fontFamily: "'Space Grotesk', sans-serif" }}>
-        {marca.charAt(0).toUpperCase()}
-      </div>
-    );
-  }
-
-  return (
-    <img
-      src={`https://www.google.com/s2/favicons?domain=${domain}&sz=128`}
-      alt={marca}
-      onError={() => setFailed(true)}
-      style={{ width: size, height: size, borderRadius: "50%", objectFit: "cover", flexShrink: 0, background: "#fff", border: "1px solid #EDE9F7" }}
-    />
-  );
-}
-
-// ---------------------------------------------------------------------------
-// GERADOR DE VAGAS DO SETOR FITNESS
-// Varia o tipo de produto entregue por cada marca (não só cinta modeladora):
-// roupa fitness, tênis, óculos esportivo, acessório, etc. — mantendo o padrão
-// de review/prova coerente com o tipo de produto.
-// ---------------------------------------------------------------------------
-const TIPOS_PRODUTO_FIT = [
-  {
-    tipo: "cinta modeladora",
-    titulos: ["Prova de cinta modeladora", "Unboxing de cinta modeladora", "Review de cinta modeladora"],
-    formatos: ["Vídeo TikTok", "Vídeo Reels", "Unboxing"],
-  },
-  {
-    tipo: "legging fitness",
-    titulos: ["Prova de legging fitness", "Look de treino com legging", "Review de legging"],
-    formatos: ["Vídeo TikTok", "Vídeo Reels", "Foto + Legenda"],
-  },
-  {
-    tipo: "tênis de treino",
-    titulos: ["Unboxing de tênis de treino", "Resenha de tênis", "Treino testando o tênis"],
-    formatos: ["Vídeo TikTok", "Vídeo Reels", "Review em vídeo"],
-  },
-  {
-    tipo: "óculos esportivo",
-    titulos: ["Unboxing de óculos esportivo", "Prova de óculos de sol", "Review de óculos"],
-    formatos: ["Foto + Legenda", "Vídeo Reels", "Unboxing"],
-  },
-  {
-    tipo: "conjunto fitness (top e short)",
-    titulos: ["Look de treino com conjunto fitness", "Prova de top fitness", "Review de conjunto fitness"],
-    formatos: ["Vídeo TikTok", "Vídeo Reels", "Foto + Legenda"],
-  },
-  {
-    tipo: "acessório fitness (garrafa, mochila ou munhequeira)",
-    titulos: ["Unboxing de acessório fitness", "Review de acessório de treino", "Dia de treino com acessório novo"],
-    formatos: ["Vídeo Reels", "Foto + Legenda", "Unboxing"],
-  },
-];
-
-function descricaoFit(tipo, marca, black) {
-  if (black) {
-    return `Buscamos criadora para uma campanha premium com a ${marca}, com múltiplas entregas mostrando ${tipo} no dia a dia, prova de uso em contextos diferentes e depoimento sobre qualidade e experiência com o produto.`;
-  }
-  return `Buscamos criador(a) para gravar conteúdo usando ${tipo} da ${marca}, mostrando o produto em uso real e sua experiência com ele no dia a dia ou no treino.`;
-}
-
-function requisitosFit(tipo, marca, black, prazo) {
-  if (black) {
-    return [
-      `Gravar pelo menos 3 vídeos usando ${tipo} da ${marca} em contextos diferentes`,
-      "Conteúdo autêntico, sem edição de corpo ou filtros de silhueta",
-      "Incluir depoimento falado sobre qualidade e experiência com o produto",
-      `Entrega de todos os vídeos em até ${prazo}`,
-    ];
-  }
-  return [
-    `Gravar conteúdo mostrando ${tipo} da ${marca} em uso`,
-    "Conteúdo autêntico, sem edição de corpo ou filtros de silhueta",
-    "Falar sobre qualidade, conforto e experiência com o produto",
-    `Entrega em até ${prazo}`,
-  ];
-}
-
-function gerarVagaFitness(id, marca, pagamento, opts = {}) {
+function gerarVagaShapewear(id, marca, pagamento, opts = {}) {
   const prazo = opts.prazo || "5 dias";
   const black = !!opts.black;
-  const produto = TIPOS_PRODUTO_FIT[id % TIPOS_PRODUTO_FIT.length];
-  const titulo = produto.titulos[id % produto.titulos.length];
-
   return {
     id,
     marca,
-    titulo: `${titulo} ${marca}`,
+    dominio: opts.dominio || null,
+    titulo: `${TITULOS_SHAPEWEAR[id % TITULOS_SHAPEWEAR.length]} ${marca}`,
     catId: "fitness",
-    formato: opts.formato || produto.formatos[id % produto.formatos.length],
+    formato: opts.formato || FORMATOS_SHAPEWEAR[id % FORMATOS_SHAPEWEAR.length],
     pagamentoLabel: `R$${pagamento}`,
     prazo,
     local: "Remoto",
     candidatos: opts.candidatos ?? (5 + (id * 7) % 40),
     urgente: !!opts.urgente,
     black,
-    descricao: descricaoFit(produto.tipo, marca, black),
-    requisitos: requisitosFit(produto.tipo, marca, black, prazo),
+    descricao: black
+      ? `Buscamos criadora para uma campanha premium com a ${marca}, com múltiplas entregas mostrando a cinta modeladora no dia a dia, prova de caimento com roupas diferentes e depoimento sobre conforto e autoestima.`
+      : `Buscamos criadora para gravar um vídeo de prova da cinta modeladora ${marca}, mostrando o antes e depois ao vestir a peça por baixo da roupa e o caimento no dia a dia.`,
+    requisitos: black
+      ? [`Gravar pelo menos 3 vídeos com a cinta ${marca} em looks diferentes`, "Biotipo real, sem edição de corpo ou filtros de silhueta", "Incluir depoimento falado sobre conforto e autoestima", `Entrega de todos os vídeos em até ${prazo}`]
+      : [`Gravar vídeo de prova (antes/depois) usando a cinta ${marca}`, "Biotipo real, sem edição de corpo ou filtros de silhueta", "Falar sobre conforto e caimento da peça", `Entrega em até ${prazo}`],
   };
 }
 
 const FITNESS_BRANDS = [
-  ["Lupo", 650], ["Plié", 700], ["Esbelt", 600], ["Trifil", 720], ["Demillus", 680],
-  ["Dilady", 590], ["Selene", 610], ["Duloren", 750], ["Mondress", 640], ["Loba", 560],
+  ["Lupo", 650, "lupo.com.br"], ["Plié", 700], ["Esbelt", 600], ["Trifil", 720, "trifil.com.br"], ["Demillus", 680, "demillus.com.br"],
+  ["Dilady", 590], ["Selene", 610], ["Duloren", 750, "duloren.com.br"], ["Mondress", 640], ["Loba", 560],
   ["Catarina", 580], ["Le Paris", 690], ["New Form", 630], ["Dupin", 570], ["Midas Time", 710],
-  ["Shanty Lingerie", 660], ["Point Mix", 620], ["Hope", 780], ["Scala", 600], ["Darlequê", 590],
+  ["Shanty Lingerie", 660], ["Point Mix", 620], ["Hope", 780, "hopelingerie.com.br"], ["Scala", 600], ["Darlequê", 590],
   ["Liz", 730], ["Recco", 610], ["Zee Rucci", 670], ["Slim Fit", 550], ["Cocar", 600],
-  ["Valisere", 800], ["De Millus", 690], ["Sofisti", 570], ["Corfarm", 540], ["Bodyboo", 650],
-  ["Cinta Modeladora Shaper", 520], ["Miss Bela", 560], ["Uniê", 610], ["Sculptshe", 900],
+  ["Valisere", 800, "valisere.com.br"], ["De Millus", 690, "demillus.com.br"], ["Sofisti", 570], ["Corfarm", 540], ["Bodyboo", 650],
+  ["Cinta Modeladora Shaper", 520], ["Miss Bela", 560], ["Uniê", 610], ["Sculptshe", 900, "sculptshe.com"],
   ["Fajas Salomé", 630], ["Fiorella", 700], ["Salomé", 640], ["Cocoon Shapewear", 680],
-  ["Vedette", 1100], ["Squeem", 1200],
+  ["Vedette", 1100, "vedetteshapewear.com"], ["Squeem", 1200, "squeem.com"],
 ];
 
 const FITNESS_BRANDS_BLACK = [
-  ["Spanx", 2200], ["Leonisa", 2400], ["Ann Chery", 2100], ["Miraclesuit", 2300], ["Fajas Colombianas", 2000],
+  ["Spanx", 2200, "spanx.com"], ["Leonisa", 2400, "leonisa.com"], ["Ann Chery", 2100, "annchery.us"], ["Miraclesuit", 2300, "miraclesuit.com"], ["Fajas Colombianas", 2000],
 ];
 
 const VAGAS_FITNESS = [
-  ...FITNESS_BRANDS.map(([marca, pagamento], i) => gerarVagaFitness(100 + i, marca, pagamento, { urgente: i % 9 === 0 })),
-  ...FITNESS_BRANDS_BLACK.map(([marca, pagamento], i) => gerarVagaFitness(200 + i, marca, pagamento, { black: true, prazo: "10 dias", urgente: i % 2 === 0 })),
+  ...FITNESS_BRANDS.map(([marca, pagamento, dominio], i) => gerarVagaShapewear(100 + i, marca, pagamento, { urgente: i % 9 === 0, dominio })),
+  ...FITNESS_BRANDS_BLACK.map(([marca, pagamento, dominio], i) => gerarVagaShapewear(200 + i, marca, pagamento, { black: true, prazo: "10 dias", urgente: i % 2 === 0, dominio })),
 ];
 
-// ---------------------------------------------------------------------------
-// VAGAS DO SETOR BELEZA / COSMÉTICOS
-// Cada marca já vem com um produto específico definido (não sorteado),
-// já que a lista foi montada e aprovada manualmente marca a marca.
-// ---------------------------------------------------------------------------
+// Gerador de vagas do setor Beleza — cada marca tem produto e comissão específicos (não gerados aleatoriamente)
 const TITULOS_BELEZA = ["Review de", "Unboxing de", "Tutorial usando", "Resenha de"];
-const FORMATOS_BELEZA = ["Vídeo TikTok", "Vídeo Reels", "Foto + Legenda", "Unboxing", "Review em vídeo"];
 
 function gerarVagaBeleza(id, marca, produto, pagamento, opts = {}) {
   const prazo = opts.prazo || "5 dias";
-  const black = !!opts.black;
-  const titulo = TITULOS_BELEZA[id % TITULOS_BELEZA.length];
-
   return {
     id,
     marca,
-    titulo: `${titulo} ${produto} ${marca}`,
+    dominio: opts.dominio || null,
+    titulo: `${TITULOS_BELEZA[id % TITULOS_BELEZA.length]} ${produto}`,
     catId: "beleza",
-    formato: opts.formato || FORMATOS_BELEZA[id % FORMATOS_BELEZA.length],
+    formato: opts.formato || FORMATOS_SHAPEWEAR[id % FORMATOS_SHAPEWEAR.length],
     pagamentoLabel: `R$${pagamento}`,
     prazo,
     local: "Remoto",
-    candidatos: opts.candidatos ?? (5 + (id * 5) % 35),
+    candidatos: opts.candidatos ?? (5 + (id * 7) % 40),
     urgente: !!opts.urgente,
-    black,
-    descricao: black
-      ? `Buscamos criadora para uma campanha premium com a ${marca}, com múltiplas entregas mostrando ${produto} no dia a dia, resultado real de uso e depoimento sobre a experiência com o produto.`
-      : `Buscamos criador(a) para gravar conteúdo usando ${produto} da ${marca}, mostrando a aplicação/uso real e sua opinião sincera sobre o produto.`,
-    requisitos: black
-      ? [`Gravar pelo menos 3 vídeos usando ${produto} da ${marca}`, "Mostrar o produto sendo aplicado/usado de forma real, sem exageros", "Incluir depoimento falado sobre a experiência e resultado", `Entrega de todos os vídeos em até ${prazo}`]
-      : [`Gravar conteúdo mostrando ${produto} da ${marca} em uso`, "Mostrar a aplicação/uso real do produto", "Dar uma opinião sincera sobre textura, cheiro e resultado", `Entrega em até ${prazo}`],
+    black: false,
+    descricao: `Buscamos criadora para gravar conteúdo usando o ${produto} da ${marca}, mostrando a experiência real de uso, textura/resultado e sua opinião sincera sobre o produto.`,
+    requisitos: [`Gravar vídeo usando o ${produto}`, "Mostrar aplicação/uso real do produto na pele ou cabelo", "Dar opinião sincera sobre resultado e textura", `Entrega em até ${prazo}`],
   };
 }
 
 const BELEZA_BRANDS = [
-  ["Sallve", "sérum facial", 780], ["Skelt Cosmetics", "creme para manchas na pele", 650],
-  ["Beyoung", "kit skincare personalizado", 720], ["Suada", "blend de óleos pós-treino", 580],
-  ["Verse", "creme facial 40+", 690], ["Juvia", "sérum com peptídeos", 850],
-  ["Widi Care", "protetor solar facial", 620], ["Bioage", "ácido hialurônico", 700],
-  ["Bio Extratus", "máscara capilar", 480], ["Forever Liss", "progressiva sem formol", 650],
-  ["Cadiveu Professional", "kit reconstrução capilar", 900], ["Inoar", "queratina capilar", 750],
-  ["Vizzela", "óleo capilar", 460], ["Yenzah", "creme de pentear", 440],
-  ["Griffus", "shampoo antirresíduo", 470], ["Nazca Cosméticos", "tratamento capilar", 500],
-  ["Impala", "kit de esmaltes", 420], ["Bel Cosméticos", "base fortalecedora de unhas", 430],
-  ["Vitawin", "vitamina capilar em cápsulas", 550], ["Instituto Beleza Natural", "kit tratamento crespo/cacheado", 680],
-  ["Ada Tina", "paleta de maquiagem profissional", 720], ["Catharine Hill", "kit de pincéis profissionais", 600],
-  ["Phebo", "kit de sabonetes perfumados", 450], ["Dermage", "sérum antioxidante", 800],
-  ["Farmax", "linha dermocosmética facial", 580], ["Amend", "shampoo e condicionador", 460],
-  ["Napura", "máscara de hidratação capilar", 500], ["New Nail", "kit de cuidados para unhas", 440],
-  ["Bozzano", "kit grooming masculino", 470], ["L'Acqua di Fiori", "perfume de nicho", 950],
-  ["Talento", "perfume acessível", 500], ["Simple Organic", "sabonete natural", 450],
-  ["Vichy Brasil", "protetor solar dermatológico", 730], ["Yes! Cosmetics", "kit ativação de cachos", 620],
-  ["Meu Rebu", "creme para cachos definidos", 540],
+  ["Sallve", "Sérum facial", 780, "sallve.com.br"],
+  ["Skelt Cosmetics", "Creme para manchas na pele", 650],
+  ["Beyoung", "Kit skincare personalizado", 720],
+  ["Suada", "Blend de óleos pós-treino", 580],
+  ["Verse", "Creme facial 40+", 690],
+  ["Juvia", "Sérum com peptídeos", 850],
+  ["Widi Care", "Protetor solar facial", 620],
+  ["Bioage", "Ácido hialurônico", 700],
+  ["Bio Extratus", "Máscara capilar", 480, "bioextratus.com.br"],
+  ["Forever Liss", "Progressiva sem formol", 650, "foreverliss.com.br"],
+  ["Cadiveu Professional", "Kit reconstrução capilar", 900, "cadiveu.com.br"],
+  ["Inoar", "Queratina capilar", 750, "inoar.com"],
+  ["Vizzela", "Óleo capilar", 460],
+  ["Yenzah", "Creme de pentear", 440],
+  ["Griffus", "Shampoo antirresíduo", 470],
+  ["Nazca Cosméticos", "Tratamento capilar", 500],
+  ["Impala", "Kit de esmaltes", 420, "impala.com.br"],
+  ["Bel Cosméticos", "Base fortalecedora de unhas", 430],
+  ["Vitawin", "Vitamina capilar em cápsulas", 550],
+  ["Instituto Beleza Natural", "Kit tratamento crespo/cacheado", 680],
+  ["Ada Tina", "Paleta de maquiagem profissional", 720],
+  ["Catharine Hill", "Kit de pincéis profissionais", 600],
+  ["Phebo", "Kit de sabonetes perfumados", 450, "phebo.com.br"],
+  ["Dermage", "Sérum antioxidante", 800],
+  ["Farmax", "Linha dermocosmética facial", 580],
+  ["Amend", "Shampoo e condicionador", 460],
+  ["Napura", "Máscara de hidratação capilar", 500],
+  ["New Nail", "Kit de cuidados para unhas", 440],
+  ["Bozzano", "Kit grooming masculino", 470],
+  ["L'Acqua di Fiori", "Perfume de nicho", 950],
+  ["Talento", "Perfume acessível", 500],
+  ["Simple Organic", "Sabonete natural", 450],
+  ["Vichy Brasil", "Protetor solar dermatológico", 730, "vichy.com.br"],
+  ["Yes! Cosmetics", "Kit ativação de cachos", 620],
+  ["Meu Rebu", "Creme para cachos definidos", 540],
 ];
 
-const VAGAS_BELEZA = BELEZA_BRANDS.map(([marca, produto, pagamento], i) =>
-  gerarVagaBeleza(300 + i, marca, produto, pagamento, { urgente: i % 8 === 0 })
+const VAGAS_BELEZA = BELEZA_BRANDS.map(([marca, produto, pagamento, dominio], i) =>
+  gerarVagaBeleza(300 + i, marca, produto, pagamento, { urgente: i % 8 === 0, dominio })
 );
 
-const VAGAS = [VAGA_LEMON_FRESH, ...VAGAS_FITNESS, ...VAGAS_BELEZA];
+// Intercala as vagas por categoria pra não ficarem sequenciais (ex: 40 de Fitness seguidas)
+function intercalarPorCategoria(lista) {
+  const grupos = {};
+  const ordemCategorias = [];
+  lista.forEach((v) => {
+    if (!grupos[v.catId]) {
+      grupos[v.catId] = [];
+      ordemCategorias.push(v.catId);
+    }
+    grupos[v.catId].push(v);
+  });
+
+  const resultado = [];
+  let restantes = lista.length;
+  let i = 0;
+  while (restantes > 0) {
+    const catId = ordemCategorias[i % ordemCategorias.length];
+    const grupo = grupos[catId];
+    if (grupo.length > 0) {
+      resultado.push(grupo.shift());
+      restantes--;
+    }
+    i++;
+  }
+  return resultado;
+}
+
+const VAGAS = intercalarPorCategoria([VAGA_LEMON_FRESH, ...VAGAS_FITNESS, ...VAGAS_BELEZA]);
 
 // Referência para o contador de "marcas parceiras" que cresce sozinho a cada 30 minutos
 const PARCEIRAS_BASE = 212;
@@ -559,7 +465,7 @@ export default function App() {
                     </div>
                     <h3 style={{ margin: "0 0 2px", fontSize: 15, fontFamily: "'Space Grotesk', sans-serif", fontWeight: 500 }}>{v.titulo}</h3>
                     <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                      <BrandLogo marca={v.marca} size={18} color={cat.color} bg={cat.bg} />
+                      <BrandLogo marca={v.marca} dominio={v.dominio} cat={cat} size={18} />
                       <p style={{ margin: 0, fontSize: 13, color: "#8A82AE" }}>{v.marca}</p>
                     </div>
                     <div style={{ display: "flex", gap: 14, marginTop: 8, fontSize: 12, color: "#8A82AE", flexWrap: "wrap" }}>
@@ -570,14 +476,8 @@ export default function App() {
                   </div>
                   <div className="ugc-price-block" style={{ textAlign: "right", flexShrink: 0 }}>
                     <div style={{ fontFamily: "'JetBrains Mono', monospace", fontWeight: 700, fontSize: 15, color: v.black ? "#8A6D1F" : accentDark, maxWidth: 150, display: "flex", alignItems: "center", gap: 5, justifyContent: "flex-end" }}>
-                      {v.black && !isAssinanteBlack ? (
-                        <><Lock size={12} /> ***</>
-                      ) : (
-                        <>
-                          <span style={{ width: 7, height: 7, borderRadius: "50%", background: "#3B6D11", flexShrink: 0 }} />
-                          {v.pagamentoLabel || `R$${v.pagamento}`}
-                        </>
-                      )}
+                      <span style={{ width: 7, height: 7, borderRadius: "50%", background: "#3B6D11", flexShrink: 0 }} />
+                      {v.pagamentoLabel || `R$${v.pagamento}`}
                     </div>
                     <div style={{ fontSize: 11, color: applied ? "#3B6D11" : "#8A82AE", marginTop: 4 }}>{applied ? "Candidatura enviada" : "Inscreva-se na vaga"}</div>
                   </div>
@@ -596,9 +496,9 @@ export default function App() {
             <div style={{ width: 52, height: 52, borderRadius: "50%", background: "#EEEDFE", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 18px" }}>
               <Lock size={22} color="#534AB7" />
             </div>
-            <h2 style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: 19, margin: "0 0 8px", fontWeight: 500 }}>Em breve para marcas</h2>
+            <h2 style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: 19, margin: "0 0 8px", fontWeight: 500 }}>Acesso exclusivo para parceiras</h2>
             <p style={{ fontSize: 14, color: "#8A82AE", margin: 0, lineHeight: 1.6 }}>
-              A função de postar vagas está temporariamente indisponível enquanto finalizamos o processo para marcas parceiras.
+              A função de postar vagas está liberada exclusivamente para empresas parceiras.
             </p>
           </div>
         </main>
@@ -617,7 +517,7 @@ export default function App() {
                   <span style={{ fontSize: 11, fontWeight: 600, padding: "3px 9px", borderRadius: 6, background: cat.bg, color: cat.color }}>{cat.label}</span>
                   <h2 style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: 21, margin: "12px 0 2px", fontWeight: 500 }}>{selectedVaga.titulo}</h2>
                   <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 16 }}>
-                    <BrandLogo marca={selectedVaga.marca} size={20} color={cat.color} bg={cat.bg} />
+                    <BrandLogo marca={selectedVaga.marca} dominio={selectedVaga.dominio} cat={cat} size={20} />
                     <p style={{ margin: 0, color: "#8A82AE", fontSize: 14 }}>{selectedVaga.marca}</p>
                   </div>
 
@@ -626,14 +526,8 @@ export default function App() {
                     <span style={{ display: "flex", alignItems: "center", gap: 4 }}><MapPin size={13} />{selectedVaga.local}</span>
                     <span style={{ display: "flex", alignItems: "center", gap: 4 }}><Users size={13} />{selectedVaga.candidatos} candidatos</span>
                     <span style={{ display: "flex", alignItems: "center", gap: 4, fontFamily: "'JetBrains Mono', monospace", fontWeight: 700, color: "#4B1528" }}>
-                      {selectedVaga.black && !isAssinanteBlack ? (
-                        <><Banknote size={13} /> ***</>
-                      ) : (
-                        <>
-                          <span style={{ width: 7, height: 7, borderRadius: "50%", background: "#3B6D11", flexShrink: 0 }} />
-                          {selectedVaga.pagamentoLabel || `R$${selectedVaga.pagamento}`}
-                        </>
-                      )}
+                      <span style={{ width: 7, height: 7, borderRadius: "50%", background: "#3B6D11", flexShrink: 0 }} />
+                      {selectedVaga.pagamentoLabel || `R$${selectedVaga.pagamento}`}
                     </span>
                   </div>
 
@@ -740,6 +634,29 @@ function Overlay({ children, onClose }) {
       <div onClick={(e) => e.stopPropagation()} style={{ width: 420, maxWidth: "92vw", background: "#fff", height: "100%", overflowY: "auto", boxShadow: "-4px 0 24px rgba(29,22,51,0.12)" }}>
         {children}
       </div>
+    </div>
+  );
+}
+
+function BrandLogo({ marca, dominio, cat, size = 18 }) {
+  const [failed, setFailed] = useState(false);
+  const initials = marca.charAt(0).toUpperCase();
+  const wrapperStyle = {
+    width: size, height: size, borderRadius: "50%", background: cat.bg, color: cat.color,
+    fontSize: size * 0.55, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center",
+    flexShrink: 0, fontFamily: "'Space Grotesk', sans-serif", overflow: "hidden",
+  };
+  if (!dominio || failed) {
+    return <div style={wrapperStyle}>{initials}</div>;
+  }
+  return (
+    <div style={wrapperStyle}>
+      <img
+        src={`https://www.google.com/s2/favicons?domain=${dominio}&sz=64`}
+        alt={marca}
+        onError={() => setFailed(true)}
+        style={{ width: "70%", height: "70%", objectFit: "contain" }}
+      />
     </div>
   );
 }
