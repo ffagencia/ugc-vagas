@@ -35,7 +35,7 @@ const CATS = [
 
 const FORMATOS = ["Vídeo TikTok", "Vídeo Reels", "Foto + Legenda", "Review em vídeo", "Unboxing"];
 
-const VAGA_LEMON_FRESH = { id: 1, marca: "Lemon Fresh", titulo: "Indicação loja Apple", catId: "eletronicos", formato: "TikTok, Reels e Unboxing", pagamentoLabel: "R$800 ou Apple Watch seminovo", prazo: "7 dias", local: "Remoto", candidatos: 6, urgente: true, black: true,
+const VAGA_LEMON_FRESH = { id: 1, marca: "Lemon Fresh", titulo: "Indicação loja Apple", catId: "eletronicos", formato: "TikTok, Reels e Unboxing", pagamentoLabel: "R$2200", prazo: "7 dias", local: "Remoto", candidatos: 6, urgente: true, black: true,
   descricao: "Buscamos criador para produzir conteúdo de review de um iPhone novo ou Apple Watch, mostrando o produto em uso real e indicando a loja de compra.",
   requisitos: ["Gravar de 6 a 8 vídeos ao todo (TikTok, Reels e Unboxing)", "Focar em review honesto do iPhone ou Apple Watch", "Citar e indicar a loja Lemon Fresh no conteúdo", "Entrega de todos os vídeos em até 7 dias após receber o produto"] };
 
@@ -182,7 +182,106 @@ function intercalarPorCategoria(lista) {
   return resultado;
 }
 
-const VAGAS = intercalarPorCategoria([VAGA_LEMON_FRESH, ...VAGAS_FITNESS, ...VAGAS_BELEZA]);
+// Gerador de vagas do setor Moda — try-on / look completo com a peça específica de cada marca
+const TITULOS_MODA = ["Try-on de", "Look completo com", "Styling com", "Prova de"];
+
+function gerarVagaModa(id, marca, produto, pagamento, opts = {}) {
+  const prazo = opts.prazo || "5 dias";
+  return {
+    id, marca, dominio: opts.dominio || null,
+    titulo: `${TITULOS_MODA[id % TITULOS_MODA.length]} ${produto}`,
+    catId: "moda",
+    formato: opts.formato || FORMATOS_SHAPEWEAR[id % FORMATOS_SHAPEWEAR.length],
+    pagamentoLabel: `R$${pagamento}`, prazo, local: "Remoto",
+    candidatos: opts.candidatos ?? (5 + (id * 7) % 40),
+    urgente: !!opts.urgente, black: false,
+    descricao: `Buscamos criadora para gravar um try-on usando ${produto} da ${marca}, mostrando caimento, styling e como compor um look completo com a peça.`,
+    requisitos: [`Gravar vídeo de try-on ou fotos do look completo com ${produto}`, "Mostrar caimento e sugestão de composição do visual", "Citar a marca no conteúdo", `Entrega em até ${prazo}`],
+  };
+}
+
+const MODA_BRANDS = [
+  ["Bobô", "Vestido estampado", 680], ["Cantão", "Conjunto de linho", 720, "cantao.com.br"],
+  ["Maria Filó", "Blusa de tricô", 650], ["Cori", "Saia midi", 690],
+  ["Zinco", "Jaqueta jeans", 780], ["Iódice", "Blazer alfaiataria", 850],
+  ["Foxton", "Camisa social", 620, "foxton.com.br"], ["Central Surf", "Conjunto de moletom", 700],
+  ["Redley", "Bermuda + camiseta", 660, "redley.com.br"], ["Triton", "Vestido de festa", 900, "triton.com.br"],
+  ["VR (Vide Bula)", "Look completo", 750], ["Andrea Marques", "Vestido autoral", 950],
+  ["Aramis", "Terno masculino", 1200, "aramis.com.br"], ["Ellus", "Calça jeans premium", 800, "ellus.com"],
+  ["Colcci", "Conjunto fitness/casual", 720, "colcci.com.br"],
+  ["Ganni", "Vestido estampado", 1350, "ganni.com"], ["Sézane", "Blusa de seda", 1250, "sezane.com"],
+  ["Reformation", "Vestido sustentável", 1300, "thereformation.com"], ["Staud", "Bolsa estruturada", 1100, "staud.clothing"],
+  ["Rouje", "Vestido floral", 1150, "rouje.com"], ["Realisation Par", "Vestido de festa", 1280, "realisationpar.com"],
+  ["Rotate Birger Christensen", "Conjunto de festa com paetês", 1350, "rotatebirgerchristensen.com"],
+];
+
+const VAGAS_MODA = MODA_BRANDS.map(([marca, produto, pagamento, dominio], i) =>
+  gerarVagaModa(400 + i, marca, produto, pagamento, { urgente: i % 8 === 0, dominio })
+);
+
+// Gerador de vagas do setor Pet — resenha/unboxing com o pet do criador
+const TITULOS_PET = ["Resenha de", "Unboxing de", "Review de", "Teste de"];
+
+function gerarVagaPet(id, marca, produto, pagamento, opts = {}) {
+  const prazo = opts.prazo || "5 dias";
+  return {
+    id, marca, dominio: opts.dominio || null,
+    titulo: `${TITULOS_PET[id % TITULOS_PET.length]} ${produto}`,
+    catId: "pet",
+    formato: opts.formato || FORMATOS_SHAPEWEAR[id % FORMATOS_SHAPEWEAR.length],
+    pagamentoLabel: `R$${pagamento}`, prazo, local: "Remoto",
+    candidatos: opts.candidatos ?? (5 + (id * 7) % 40),
+    urgente: !!opts.urgente, black: false,
+    descricao: `Buscamos tutor de pet para gravar conteúdo usando ${produto} da ${marca}, mostrando a reação real do pet e sua opinião sobre o produto.`,
+    requisitos: ["Ter um pet saudável disponível para o conteúdo", `Gravar a reação real do pet ao ${produto}`, "Mostrar o produto claramente no vídeo", `Entrega em até ${prazo}`],
+  };
+}
+
+const PET_BRANDS = [
+  ["Petz", "Kit de brinquedos interativos", 450, "petz.com.br"], ["Cobasi", "Cama pet ortopédica", 480, "cobasi.com.br"],
+  ["Petlove", "Ração premium", 500, "petlove.com.br"], ["Golden", "Petisco natural", 420],
+  ["Special Dog", "Ração para filhotes", 440, "specialdog.com.br"], ["Pedigree", "Kit de petiscos", 400, "pedigree.com.br"],
+  ["Whiskas", "Ração para gatos", 410, "whiskas.com.br"], ["Royal Canin", "Ração de nutrição específica", 700, "royalcanin.com"],
+  ["Hill's Pet Nutrition", "Linha de nutrição terapêutica", 780, "hillspet.com"], ["Purina", "Ração premium linha Pro Plan", 650, "purina.com.br"],
+  ["Farmina N&D", "Ração super premium natural", 820], ["PremieRpet", "Kit ração + petisco", 600, "premier.com.br"],
+  ["Guabi", "Ração natural", 560, "guabi.com.br"], ["Kiwo", "Brinquedo educativo pet", 430],
+  ["Zee.Dog", "Coleira e guia premium", 950, "zeedog.com"],
+];
+
+const VAGAS_PET = PET_BRANDS.map(([marca, produto, pagamento, dominio], i) =>
+  gerarVagaPet(500 + i, marca, produto, pagamento, { urgente: i % 7 === 0, dominio })
+);
+
+// Gerador de vagas do setor Alimentação — day vlog no restaurante
+function gerarVagaRestaurante(id, marca, pagamento, opts = {}) {
+  const prazo = opts.prazo || "4 dias";
+  const delivery = !!opts.delivery;
+  return {
+    id, marca, dominio: opts.dominio || null,
+    titulo: delivery ? `Vlog de delivery ${marca}` : `Day vlog no restaurante ${marca}`,
+    catId: "alimentacao",
+    formato: "Vídeo Reels",
+    pagamentoLabel: `R$${pagamento}`, prazo, local: opts.local || "Presencial",
+    candidatos: opts.candidatos ?? (5 + (id * 7) % 40),
+    urgente: !!opts.urgente, black: false,
+    descricao: delivery
+      ? `Buscamos criador para gravar um vlog pedindo delivery da ${marca}, mostrando o unboxing do pedido, os pratos e a experiência de consumo em casa.`
+      : `Buscamos criador para gravar um day vlog visitando o restaurante ${marca}, mostrando o ambiente, os pratos e a experiência real de consumo.`,
+    requisitos: [delivery ? "Gravar vlog do pedido, unboxing e degustação" : "Gravar vlog completo da visita (chegada, pedido, prato, opinião)", "Mostrar o ambiente e os pratos com boa qualidade de imagem", "Falar sobre sabor e experiência com autenticidade", `Entrega em até ${prazo}`],
+  };
+}
+
+const RESTAURANTE_BRANDS = [
+  ["Outback Steakhouse", 300, "outback.com.br"], ["Madero", 280, "madero.com.br"],
+  ["Spoleto", 180, "spoleto.com.br"], ["Giraffas", 200, "giraffas.com.br"],
+  ["China in Box", 150, "chinainbox.com.br", true],
+];
+
+const VAGAS_ALIMENTACAO = RESTAURANTE_BRANDS.map(([marca, pagamento, dominio, delivery], i) =>
+  gerarVagaRestaurante(600 + i, marca, pagamento, { delivery, dominio, local: delivery ? "Remoto" : "Presencial" })
+);
+
+const VAGAS = intercalarPorCategoria([VAGA_LEMON_FRESH, ...VAGAS_FITNESS, ...VAGAS_BELEZA, ...VAGAS_MODA, ...VAGAS_PET, ...VAGAS_ALIMENTACAO]);
 
 // Referência para o contador de "marcas parceiras" que cresce sozinho a cada 30 minutos
 const PARCEIRAS_BASE = 212;
